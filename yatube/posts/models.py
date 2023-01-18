@@ -30,14 +30,14 @@ class Post(models.Model):
         blank=True
     )
 
-    def __str__(self):
-        return self.text[:15]
-
     class Meta:
-        ordering = ['-pub_date']
+        ordering = ('-pub_date',)
         default_related_name = 'posts'
         verbose_name = 'Пост'
         verbose_name_plural = 'Посты'
+
+    def __str__(self):
+        return self.text[:15]
 
 
 class Group(models.Model):
@@ -74,7 +74,7 @@ class Comment(models.Model):
     )
 
     class Meta:
-        ordering = ['-created']
+        ordering = ('-created',)
         default_related_name = 'comments'
 
     def __str__(self):
