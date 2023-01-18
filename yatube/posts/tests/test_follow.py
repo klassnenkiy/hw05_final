@@ -23,43 +23,44 @@ class FollowTest(TestCase):
     def setUp(self):
         cache.clear()
         self.author_client = Client()
-        self.author_client.force_login(self.follower)
-        self.authorized_client = Client()
-        self.authorized_client.force_login(self.post_author)
+        self.author_client.force_login(self.post_author)
+        self.auth_follower_client = Client()
+        self.auth_follower_client.force_login(self.follower)
 
     def test_auth_can_follow(self):
         """Авторизованный пользователь может подписываться на других"""
         count_follow = Follow.objects.count()
-        self.authorized_client.post(
+        self.auth_follower_client.post(
             reverse(
                 'posts:profile_follow',
-                kwargs={'username': self.follower}))
+                kwargs={'username': self.post_author}))
         follow = Follow.objects.latest('id')
         self.assertEqual(Follow.objects.count(), count_follow + 1)
-        self.assertEqual(follow.author.id, self.follower.id)
-        self.assertEqual(follow.user.id, self.post_author.id)
+        self.assertEqual(follow.author.id, self.post_author.id)
+        self.assertEqual(follow.user.id, self.follower.id)
 
     def test_auth_can_unfollow(self):
         """Авторизованный пользователь может удалять их из подписок."""
         Follow.objects.create(
-            user=self.post_author,
-            author=self.follower)
+            author=self.post_author,
+            user=self.follower
+        )
         count_follow = Follow.objects.count()
-        self.authorized_client.post(
+        self.auth_follower_client.post(
             reverse(
                 'posts:profile_unfollow',
-                kwargs={'username': self.follower}))
+                kwargs={'username': self.post_author}))
         self.assertEqual(Follow.objects.count(), count_follow - 1)
 
     def test_new_post_follower(self):
         """Новая запись пользователя появляется в ленте подписчиков"""
         post = Post.objects.create(
             author=self.post_author,
-            text='новый тестовый пост')
+            text='новый пост')
         Follow.objects.create(
             user=self.follower,
             author=self.post_author)
-        response = self.author_client.get(
+        response = self.auth_follower_client.get(
             reverse('posts:follow_index'))
         self.assertIn(post, response.context['page_obj'])
 
